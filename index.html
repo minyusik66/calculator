@@ -5,6 +5,7 @@
    휴대폰 파일(file://)에서는 그대로 corsproxy 사용 */
 (function(){ try{
   if(!/^https?:/i.test(document.baseURI||'')) return;
+  window.__wdWeb=true;
   var RELAY='https://open-gate-relay-hub.lovable.app/api/public/proxy?url=';
   var of=window.fetch; if(!of || of.__wdRelay) return;
   var nf=function(u,o){ try{ var s=(typeof u==='string')?u:(u&&u.url)||'';
@@ -33394,6 +33395,7 @@ var OB_AUTO = {
       {id:'jina',name:'r.jina.ai',u:'https://r.jina.ai/'+URL,ms:15000}];
     var last=null; try{ last=localStorage.getItem('wooriRouteOK'); }catch(e){}
     if(last){ var k=L.findIndex(function(r){ return r.id===last; }); if(k>0) L.unshift(L.splice(k,1)[0]); }
+    if(window.__wdWeb){ var kc=L.findIndex(function(r){ return r.id==='corsproxy'; }); if(kc>=0){ L[kc].ms=20000; if(kc>0) L.unshift(L.splice(kc,1)[0]); } }   /* 26.11.26: 웹 주소에선 중계서버 먼저 */
     return L;
   }
   function errText(e){ var m=String(e&&e.message||e); if(/abort/i.test(m)) return '시간 초과'; if(/HTTP 429/.test(m)) return '요청 한도 초과'; if(/Failed to fetch|NetworkError|Load failed|TypeError/i.test(m)) return '접속 차단'; return m; }
@@ -33677,6 +33679,7 @@ var OB_AUTO = {
       L.push({n:'allorigins('+tag+')',u:'https://api.allorigins.win/raw?url='+encodeURIComponent(U),ms:8000,src:U});
       L.push({n:'codetabs('+tag+')',u:'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(U),ms:8000,src:U});
     });
+    if(window.__wdWeb){ L=L.filter(function(c){ if(/corsproxy\.io/.test(c.u)){ c.ms=Math.max(c.ms||0,20000); return true; } return false; }).concat(L.filter(function(c){return !/corsproxy\.io/.test(c.u);})); }   /* 26.11.26: 웹 주소에선 중계서버 경로 먼저 */
     var i=0, diag=[], snips=[], at=now(), part=null, done={}, fb1=null, biz=window.wTodayDot();
     /* 신잔액기준이 빠진 결과면 다른 우리은행 주소에서 신잔액만 더 찾아 합침 */
     function next(){
@@ -33717,6 +33720,7 @@ var OB_AUTO = {
       L.push({n:'r.jina.ai('+tag+')',u:'https://r.jina.ai/'+U,ms:20000});
       L.push({n:'allorigins('+tag+')',u:'https://api.allorigins.win/raw?url='+encodeURIComponent(U),ms:8000});
       L.push({n:'codetabs('+tag+')',u:'https://api.codetabs.com/v1/proxy/?quest='+encodeURIComponent(U),ms:8000}); });
+    if(window.__wdWeb){ L=L.filter(function(c){ if(/corsproxy\.io/.test(c.u)){ c.ms=Math.max(c.ms||0,20000); return true; } return false; }).concat(L.filter(function(c){return !/corsproxy\.io/.test(c.u);})); }   /* 26.11.26: 웹 주소에선 중계서버 경로 먼저 */
     var i=0, diag=[], snips=[], at=now(), fb2=null, biz2=window.wVarDate(null);
     function next(){ if(i>=L.length) return fb2?Promise.resolve(fb2):Promise.reject('END'); var rt=L[i++];
       return get(rt.u,rt.ms,rt.hd,rt.body).then(function(t){ try{ var o=parseVar(t); o.route=rt.n; o.qd=qdOf(t); if(rt.jc && !o.qd) o.req=1; if(rt.dt && !o.req && o.qd!==biz2){ fb2=fb2||o; diag.push(rt.n+': 값은 읽었으나 전영업일 미적용(원문 조회기준일 '+(o.qd||'미표기')+') → 다음 방법 시도'); return next(); } diag.push(rt.n+': 성공 [받은 글자 '+t.length+'자 · 원문 조회기준일 '+(o.qd||'미표기')+']'); return o; }catch(e){ var ft=flat(t).trim(), k=ft.search(/금융채|조회기준일|기준금리 *\|/); snips.push('['+rt.n+'] '+(rt.jc?('조회기준일 '+(qdOf(t)||'미표기')+' · 받은 항목 '+sections(t).length+'개\n'+secSummary(t)):(k>=0?'…'+ft.slice(Math.max(0,k-100),k+1200):ft.slice(0,300)))); throw new Error(e.message+' [받은 글자 '+t.length+'자]'); } })
