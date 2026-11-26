@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head><script>/* 26.11.14: 브라우저 탭 여러 개 방지 — 새로 연 창만 저장, 예전 창은 저장 중지 + 닫기 안내 */
+<head><script>
+/* 26.11.26: 웹 주소(GitHub Pages)에서는 corsproxy.io가 401로 막힘 → 내 중계서버(Lovable) /api/public/proxy 로 바꿔 보냄
+   휴대폰 파일(file://)에서는 그대로 corsproxy 사용 */
+(function(){ try{
+  if(!/^https?:/i.test(document.baseURI||'')) return;
+  var RELAY='https://open-gate-relay-hub.lovable.app/api/public/proxy?url=';
+  var of=window.fetch; if(!of || of.__wdRelay) return;
+  var nf=function(u,o){ try{ var s=(typeof u==='string')?u:(u&&u.url)||'';
+      var m=s.match(/^https:\/\/corsproxy\.io\/\?(?:url=)?(.+)$/);
+      if(m){ var t=m[1]; if(!/^https?%3A/i.test(t)) t=encodeURIComponent(t); return of.call(this,RELAY+t,o); } }catch(e){}
+    return of.apply(this,arguments); };
+  nf.__wdRelay=1; window.fetch=nf;
+}catch(e){} })();
+</script>
+<script>/* 26.11.14: 브라우저 탭 여러 개 방지 — 새로 연 창만 저장, 예전 창은 저장 중지 + 닫기 안내 */
 (function(){
   var ls; try{ ls=window.localStorage; }catch(e){ return; } if(!ls) return;
   var myId=Date.now()+'_'+Math.random().toString(36).slice(2,8), inactive=false;
@@ -35612,6 +35626,18 @@ window.addEventListener('message',function(e){ var d=e.data; if(!d||d.type!=='wd
   [60,500].forEach(function(t){ setTimeout(function(){ try{ f && f.contentWindow.postMessage(d,'*'); }catch(err){} },t); });
   try{ window.scrollTo(0,0); }catch(err){}
 });
+</script>
+<script>
+/* 26.11.26: 홈페이지(당행공시) 자동조회 실패 시 자동 재조회 — 열고 1분·3분 뒤, 실패한 항목만 순서대로(1 COFIX → 2 기준금리 → 3 상품별) */
+(function(){
+  var FN={1:'wCofixLookup',2:'wVarLookup',3:'wAutoLookup'};
+  function retry(){
+    var S=window.WSTATE||{}, list=[1,2,3].filter(function(n){ return S[n]==='fail' && typeof window[FN[n]]==='function'; });
+    return list.reduce(function(p,n){ return p.then(function(){ try{ return Promise.resolve(window[FN[n]](false)).catch(function(){}); }catch(e){} }); }, Promise.resolve());
+  }
+  function go(){ setTimeout(retry,60000); setTimeout(retry,180000); }
+  if(document.readyState==='complete') go(); else window.addEventListener('load',go);
+})();
 </script>
 </body>
 </html>
