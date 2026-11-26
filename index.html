@@ -1616,7 +1616,7 @@ function sameDay(t){ if(!t) return false; var a=new Date(Number(t)), b=new Date(
 &lt;span class=&quot;badge&quot; id=&quot;bond-discount-badge&quot;&gt;채권할인율(&lt;span id=&quot;bond-discount-date&quot;&gt;자동조회 중&lt;/span&gt;) &lt;input class=&quot;header-rate-input&quot; id=&quot;bond-discount-rate&quot; inputmode=&quot;decimal&quot; type=&quot;text&quot; value=&quot;16.4687&quot;/&gt;% &lt;span id=&quot;bond-discount-status&quot; style=&quot;font-size:.58rem;color:#fff;font-weight:700;white-space:nowrap;&quot;&gt;자동조회 중…&lt;/span&gt;&lt;/span&gt;
 &lt;span class=&quot;badge&quot; id=&quot;other-debt-badge&quot;&gt;기타부채금리(&lt;span id=&quot;other-debt-month&quot;&gt;미조회&lt;/span&gt;) &lt;span class=&quot;header-rate-value&quot; id=&quot;other-debt-rate&quot;&gt;5.44&lt;/span&gt;% &lt;span class=&quot;header-rate-source&quot; id=&quot;other-debt-source&quot;&gt;잔액금리 + 1.00%&lt;/span&gt; &lt;span class=&quot;hlr-lookup-icon&quot; onclick=&quot;openHlrModal()&quot; title=&quot;가계대출 잔액금리 조회&quot;&gt;🔍&lt;/span&gt;&lt;/span&gt;
 &lt;/div&gt;
-&lt;div style=&quot;display:flex; justify-content:flex-end; align-items:center; gap:6px; margin-top:6px;&quot;&gt;&lt;button type=&quot;button&quot; onclick=&quot;showRateOverview()&quot; style=&quot;border:1px solid #1B3A6B; background:#EAF1FA; color:#1B3A6B; border-radius:7px; padding:3px 8px; font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap;&quot;&gt;👀 상품금리표 한눈에보기&lt;/button&gt;&lt;span id=&quot;xlsxMsg&quot; style=&quot;font-size:11px; color:#1D6F42; font-weight:700;&quot;&gt;&lt;/span&gt;&lt;/div&gt;
+&lt;div style=&quot;display:flex; justify-content:flex-end; align-items:center; gap:6px; margin-top:6px;&quot;&gt;&lt;button type=&quot;button&quot; onclick=&quot;showRateOverview()&quot; style=&quot;border:1px solid #1B3A6B; background:#EAF1FA; color:#1B3A6B; border-radius:7px; padding:3px 8px; font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap;&quot;&gt;👀 상품금리표 한눈에보기&lt;/button&gt;&lt;button type=&quot;button&quot; id=&quot;wSetExport&quot; onclick=&quot;wooriExportSettings()&quot; style=&quot;border:1px solid #6A1B9A; background:#F3E5F5; color:#6A1B9A; border-radius:7px; padding:3px 8px; font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap;&quot;&gt;⚙ 내 설정 내보내기&lt;/button&gt;&lt;span id=&quot;xlsxMsg&quot; style=&quot;font-size:11px; color:#1D6F42; font-weight:700;&quot;&gt;&lt;/span&gt;&lt;/div&gt;
 &lt;/header&gt;
 &lt;!-- 탭 --&gt;
 &lt;div class=&quot;tabs&quot;&gt;
@@ -5326,6 +5326,52 @@ header .badge-row + div, header &gt; div[style*=&quot;margin-top&quot;]{ margin-
   var e=document.getElementById(&#x27;bb-status&#x27;); if(e) new MutationObserver(function(){ setTimeout(fit,0); }).observe(e,{childList:true,characterData:true,subtree:true});
   window.addEventListener(&#x27;resize&#x27;,function(){ setTimeout(fit,100); }); document.addEventListener(&#x27;click&#x27;,function(){ setTimeout(fit,50); }, true); setTimeout(fit,500); })();
 &lt;/script&gt;&lt;style&gt;/* 26.11.18 */ #cx-stat .cx-ts{display:inline-block; white-space:nowrap; font-size:0.66rem;}&lt;/style&gt;&lt;script&gt;
+/* 26.11.26: 공유 설정(settings.json)
+   · 「⚙ 내 설정 내보내기」 → 가산·우대·본부·유동성·추가우대·숨긴 행 등 조정값을 settings.json으로 저장
+   · 웹 주소(GitHub Pages)로 열면 같은 폴더의 settings.json을 읽어 자동 적용(새 파일일 때 한 번)
+   · 자동조회 값(기준금리·COFIX·금융채·채권할인율·날짜)은 제외 */
+(function(){
+  var SKIP=/^(header-date|bond-discount|rate-|yest-|d\d|avg-|btIn|hlr-)/;
+  function pick(st){ var v={}; Object.keys((st&amp;&amp;st.values)||{}).forEach(function(k){ if(!SKIP.test(k)) v[k]=st.values[k]; }); return {values:v, hidden:(st&amp;&amp;st.hidden)||{}}; }
+  window.wooriExportSettings=function(){
+    try{ saveState(); }catch(e){}
+    var raw=null; try{ raw=localStorage.getItem(STORAGE_KEY); }catch(e){}
+    if(!raw){ alert(&#x27;저장된 설정이 없습니다.&#x27;); return; }
+    var p=pick(JSON.parse(raw)), out={type:&#x27;woori-rate-settings&#x27;, v:1, exportedAt:new Date().toISOString(), values:p.values, hidden:p.hidden};
+    var blob=new Blob([JSON.stringify(out)],{type:&#x27;application/json&#x27;});
+    try{ if(window.parent &amp;&amp; window.parent!==window){ window.parent.postMessage({type:&#x27;wdXlsx&#x27;, blob:blob, name:&#x27;settings.json&#x27;},&#x27;*&#x27;); }
+         else { var u=URL.createObjectURL(blob), a=document.createElement(&#x27;a&#x27;); a.href=u; a.download=&#x27;settings.json&#x27;; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(u);},10000); } }catch(e){ alert(&#x27;저장 실패: &#x27;+e); return; }
+    var b=document.getElementById(&#x27;wSetExport&#x27;); if(b){ b.textContent=&#x27;✓ settings.json 저장됨&#x27;; setTimeout(function(){ b.textContent=&#x27;⚙ 내 설정 내보내기&#x27;; },3000); }
+  };
+  function apply(s){
+    var n=0;
+    Object.keys(s.values||{}).forEach(function(id){ var el=document.getElementById(id); if(!el||el.tagName!==&#x27;INPUT&#x27;) return;
+      if(el.type===&#x27;checkbox&#x27;){ var c=(s.values[id]===&#x27;1&#x27;||s.values[id]===true); if(el.checked!==c){ el.checked=c; n++; } }
+      else if(el.value!==s.values[id]){ el.value=s.values[id]; n++; } else return;
+      try{ el.dispatchEvent(new Event(&#x27;input&#x27;,{bubbles:true})); el.dispatchEvent(new Event(&#x27;change&#x27;,{bubbles:true})); }catch(e){} });
+    Object.keys(s.hidden||{}).forEach(function(id){ var arr=s.hidden[id]||[]; document.querySelectorAll(&#x27;#&#x27;+id+&#x27; tr&#x27;).forEach(function(tr,i){ tr.classList.toggle(&#x27;row-hidden&#x27;, arr.indexOf(i)&gt;=0); }); });
+    try{ if(typeof recalculate===&#x27;function&#x27;) recalculate(); }catch(e){}
+    try{ var lt=document.getElementById(&#x27;liquidity-toggle&#x27;); if(lt &amp;&amp; typeof setLiquidityDisplay===&#x27;function&#x27;) setLiquidityDisplay(lt.checked); }catch(e){}
+    try{ if(typeof markMinimumFinals===&#x27;function&#x27;) markMinimumFinals(); }catch(e){}
+    try{ saveState(); }catch(e){}
+    return n;
+  }
+  function load(){
+    var base=&#x27;&#x27;; try{ base=document.baseURI||&#x27;&#x27;; }catch(e){}
+    if(!/^https?:/i.test(base)) return;   /* 휴대폰 파일(file://)로 열 때는 적용 안 함 */
+    var url; try{ url=new URL(&#x27;settings.json?t=&#x27;+Date.now(), base).href; }catch(e){ return; }
+    fetch(url,{cache:&#x27;no-store&#x27;}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(s){
+      if(!s || s.type!==&#x27;woori-rate-settings&#x27; || !s.exportedAt) return;
+      var done=&#x27;&#x27;; try{ done=localStorage.getItem(&#x27;wooriSharedApplied&#x27;)||&#x27;&#x27;; }catch(e){}
+      if(done===s.exportedAt) return;
+      apply(s);
+      try{ localStorage.setItem(&#x27;wooriSharedApplied&#x27;, s.exportedAt); }catch(e){}
+    }).catch(function(){});
+  }
+  if(document.readyState===&#x27;complete&#x27;) setTimeout(load,2500); else window.addEventListener(&#x27;load&#x27;,function(){ setTimeout(load,2500); });
+})();
+&lt;/script&gt;
+&lt;script&gt;
 /* 26.11.22: 우리은행 상품별 금리 → 홈 화면 위젯용 전송
    - 계산이 끝날 때마다(5초 뒤) 각 표의 최종금리를 모아 중계서버(/api/public/woori-rates)에 저장
    - 같은 값이면 다시 보내지 않음 · 위젯(KWGT)은 같은 주소를 GET으로 읽음 */
