@@ -5333,6 +5333,8 @@ header .badge-row + div, header &gt; div[style*=&quot;margin-top&quot;]{ margin-
 (function(){
   var SKIP=/^(header-date|bond-discount|rate-|yest-|d\d|avg-|btIn|hlr-)/;
   function pick(st){ var v={}; Object.keys((st&amp;&amp;st.values)||{}).forEach(function(k){ if(!SKIP.test(k)) v[k]=st.values[k]; }); return {values:v, hidden:(st&amp;&amp;st.hidden)||{}}; }
+  /* 웹 주소로 열면 「내 설정 내보내기」 버튼 숨김 */
+  try{ if(/^https?:/i.test(document.baseURI||&#x27;&#x27;)){ var hb=function(){ var b=document.getElementById(&#x27;wSetExport&#x27;); if(b) b.style.display=&#x27;none&#x27;; }; hb(); document.addEventListener(&#x27;DOMContentLoaded&#x27;,hb); } }catch(e){}
   window.wooriExportSettings=function(){
     try{ saveState(); }catch(e){}
     var raw=null; try{ raw=localStorage.getItem(STORAGE_KEY); }catch(e){}
@@ -5376,6 +5378,9 @@ header .badge-row + div, header &gt; div[style*=&quot;margin-top&quot;]{ margin-
    - 계산이 끝날 때마다(5초 뒤) 각 표의 최종금리를 모아 중계서버(/api/public/woori-rates)에 저장
    - 같은 값이면 다시 보내지 않음 · 위젯(KWGT)은 같은 주소를 GET으로 읽음 */
 (function(){
+  /* 26.11.26: 웹 주소(GitHub Pages 등)로 열면 위젯 전송 기능 자체를 끔 — 휴대폰 파일(file://)에서만 작동 */
+  var __web=false; try{ __web=/^https?:/i.test(document.baseURI||&#x27;&#x27;); }catch(e){}
+  if(__web){ window.wooriWidgetPush=function(){}; return; }
   var URL_=&#x27;https://open-gate-relay-hub.lovable.app/api/public/woori-rates&#x27;, KEY_=&#x27;4e354f9662114fd9b8f5d7ae&#x27;;
   var T=[[&#x27;apt&#x27;,&#x27;apt-tbody&#x27;,&#x27;우리아파트론&#x27;],[&#x27;real&#x27;,&#x27;real-tbody&#x27;,&#x27;우리부동산론&#x27;],[&#x27;offi5&#x27;,&#x27;offi-tbody-5y&#x27;,&#x27;오피스텔 5년&#x27;],[&#x27;offi30&#x27;,&#x27;offi-tbody-30y&#x27;,&#x27;오피스텔 30년&#x27;],
          [&#x27;jhf&#x27;,&#x27;jeonse-hf&#x27;,&#x27;전세론 HF&#x27;],[&#x27;jhug&#x27;,&#x27;jeonse-hug&#x27;,&#x27;전세론 HUG&#x27;],[&#x27;jsgi&#x27;,&#x27;jeonse-sgi&#x27;,&#x27;전세론 SGI&#x27;]];
