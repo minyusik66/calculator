@@ -35643,5 +35643,71 @@ window.addEventListener('message',function(e){ var d=e.data; if(!d||d.type!=='wd
   if(document.readyState==='complete') go(); else window.addEventListener('load',go);
 })();
 </script>
+<script>
+/* 26.11.27: 홈페이지 금리 자동조회(당행공시금리 1·2·3번) 중 → 상품별금리·홈페이지 화면 위에 안내 팝업 표시
+   - 조회가 끝나면(성공·실패·생략 모든 경우) 자동으로 닫힘
+   - 1→2→3 순차 조회라도 팝업은 한 번만 표시(마지막 조회가 끝날 때까지 유지)
+   - ✕ 눌러 직접 닫을 수 있고, 직접 닫은 뒤에는 그 조회가 모두 끝날 때까지 다시 뜨지 않음 */
+(function(){
+  var POP_ID='wdAutoPop', n=0, dismissed=false, built=false;
+
+  function activeTabOK(){
+    var a=document.querySelector('.app-view.active');
+    return !!a && (a.id==='wooriDetailApp' || a.id==='wooriApp');   /* 상품별금리 · 홈페이지 탭 */
+  }
+  function running(){ return n>0; }
+
+  function build(){
+    if(built) return document.getElementById(POP_ID);
+    var d=document.createElement('div');
+    d.id=POP_ID;
+    d.style.cssText='position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);z-index:99999;'+
+      'min-width:250px;max-width:86vw;padding:18px 24px 14px;border-radius:14px;'+
+      'background:linear-gradient(180deg,#1B2540 0%,#141C33 100%);color:#F5F7FC;'+
+      'border:1px solid #D4AF37;box-shadow:0 8px 30px rgba(0,0,0,.45);'+
+      'font-family:Arial,"Malgun Gothic",sans-serif;text-align:center;display:none;';
+    d.innerHTML=
+      '<div style="font-size:14.5px;font-weight:800;letter-spacing:-.3px;color:#FFD84D;margin-bottom:9px;">🌐 홈페이지 금리 자동조회 중</div>'+
+      '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:9px;">'+
+      '<span class="wd-autospin" style="width:18px;height:18px;flex:0 0 18px;border:3px solid rgba(255,216,77,.25);border-top-color:#FFD84D;border-radius:50%;display:inline-block;"></span>'+
+      '<span style="font-size:13px;line-height:1.55;">우리은행 홈페이지에서 금리를 가져오고 있습니다.<br>잠시만 기다려 주세요.</span></div>'+
+      '<div style="font-size:11px;color:#9FB0D0;">조회가 끝나면 자동으로 닫힙니다.</div>'+
+      '<button type="button" id="wdAutoPopX" aria-label="닫기" style="position:absolute;top:6px;right:9px;background:none;border:none;color:#9FB0D0;font-size:14px;line-height:1;cursor:pointer;padding:2px;">✕</button>';
+    var st=document.createElement('style');
+    st.textContent='#wdAutoPop .wd-autospin{animation:wdAutoSpin .9s linear infinite}@keyframes wdAutoSpin{to{transform:rotate(360deg)}}'+
+      '@media (prefers-reduced-motion:reduce){#wdAutoPop .wd-autospin{animation:none}}';
+    (document.head||document.documentElement).appendChild(st);
+    document.body.appendChild(d);
+    d.querySelector('#wdAutoPopX').addEventListener('click',function(){ hide(); dismissed=true; });
+    built=true;
+    return d;
+  }
+  function show(){ if(!activeTabOK()) return; build().style.display='block'; }
+  function hide(){ var d=document.getElementById(POP_ID); if(d) d.style.display='none'; }
+  function inc(){ n++; if(!dismissed) show(); }                       /* 이미 보이는 중이면 그대로 유지 */
+  function dec(){ n=Math.max(0,n-1); if(n===0){ hide(); dismissed=false; } }  /* 성공·실패 모두 여기서 닫힘 */
+
+  /* 자동조회 함수들을 감싸 시작·종료(성공/실패/early-return 포함)마다 카운트 갱신 */
+  ['wCofixLookup','wVarLookup','wLoanLookup','wAutoLookup'].forEach(function(name){
+    var f=window[name];
+    if(typeof f!=='function') return;
+    window[name]=function(){
+      inc();
+      var r;
+      try{ r=f.apply(this,arguments); }
+      catch(e){ dec(); throw e; }
+      return Promise.resolve(r).then(function(v){ dec(); return v; }, function(e){ dec(); throw e; });
+    };
+  });
+
+  /* 조회 중에 상품별금리·홈페이지 탭으로 돌아오면 팝업 다시 표시 */
+  var _sw=window.switchTab;
+  window.switchTab=function(name){
+    var r=_sw&&_sw.apply(this,arguments);
+    try{ if(running() && !dismissed && (name==='woori'||name==='wooriDetail')) show(); }catch(e){}
+    return r;
+  };
+})();
+</script>
 </body>
 </html>
